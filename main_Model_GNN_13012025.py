@@ -61,13 +61,34 @@ class PressureGraph():
         
         
         G = nx.Graph()
+        # nodes_x = np.random.uniform(x_min, x_max, num_points)
+        # nodes_y = np.random.uniform(y_min, y_max, num_points)
+        
         nodes_x = np.random.uniform(x_min, x_max, num_points)
         nodes_y = np.random.uniform(y_min, y_max, num_points)
+        
+        # Densifier les points autour de l'aile
+        if self.forme_aile is not None:
+            num_points_foil = int(num_points * 0.3)  # 30% des points autour de l'aile
+            theta = np.linspace(0, 2 * np.pi, num_points_foil)
+            x_foil = self.x_c + (self.a * 0.5) * np.cos(theta) + np.random.normal(0, 0.1, num_points_foil)
+            y_foil = self.y_c + (self.b * 0.5) * np.sin(theta) + np.random.normal(0, 0.1, num_points_foil)
+            nodes_x = np.concatenate((nodes_x, x_foil))
+            nodes_y = np.concatenate((nodes_y, y_foil))
+    
+        
         pressures = [self.calculate_pressure(nodes_x[i], nodes_y[i]) for i in range(num_points)]
         
         # Normaliser les données
         x_coords = np.vstack((nodes_x, nodes_y)).T
         x_normalized, pressures_normalized, x_min_vals, x_max_vals, y_min_val, y_max_val = normalize_data(x_coords, np.array(pressures))
+    
+        
+        
+        
+
+        
+        
         
         # Création des nœuds
         for i in range(num_points):
