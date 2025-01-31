@@ -313,8 +313,8 @@ if __name__ == "__main__":
     
     #ajouter dense layers ?
     model.add_layer(nn.Flatten, 0, 0)
-    model.add_layer(nn.Linear, 32, 16, activation=F.relu)
-    model.add_layer(nn.Linear, 16, 1, activation=torch.sigmoid)
+    model.add_layer(nn.Linear, 32, 16, activation=F.relu, batch_norm=True, dropout=0.2)
+    model.add_layer(nn.Linear, 16, 1, activation=torch.sigmoid, batch_norm=False)
 
     # Affichage du modèle
     print(model)
