@@ -305,23 +305,22 @@ if __name__ == "__main__":
     model.add_layer(GCNConv, 16, 32, activation=F.relu, batch_norm=True, dropout=0.3)
     model.add_layer(GCNConv, 32, 64, activation=F.relu, batch_norm=True, dropout=0.4)
     model.add_layer(GCNConv, 64, 128, activation=F.relu, batch_norm=True, dropout=0.4)
-    model.add_layer(GCNConv, 128, 256, activation=F.relu, batch_norm=True, dropout=0.4)
     
-    model.add_layer(GCNConv, 256, 128, activation=F.relu, batch_norm=True, dropout=0.4)
     model.add_layer(GCNConv, 128, 64, activation=F.relu, batch_norm=True, dropout=0.3)
     model.add_layer(GCNConv, 64, 32, activation=F.relu, batch_norm=True, dropout=0.2)
-    model.add_layer(GCNConv, 32, 16, activation=F.relu, batch_norm=False)
+    #model.add_layer(GCNConv, 32, 16, activation=F.relu, batch_norm=False)
     #model.add_layer(GCNConv, 16, 1, activation=torch.sigmoid)
     
     #ajouter dense layers ?
-    model.add_layer(nn.Linear, 16, 64, activation=F.relu)
-    model.add_layer(nn.Linear, 64, 1, activation=torch.sigmoid)
+    model.add_layer(nn.Flatten, 0, 0)
+    model.add_layer(nn.Linear, 32, 16, activation=F.relu)
+    model.add_layer(nn.Linear, 16, 1, activation=torch.sigmoid)
 
     # Affichage du modèle
     print(model)
     
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5) #pas utile adam a déjà
     loss_fn = nn.MSELoss()
 
@@ -352,7 +351,7 @@ if __name__ == "__main__":
     print(f"Test MSE: {test_mse:.4f}, Test R²: {test_r2:.4f}")
 
     # Tracer les courbes de perte et de R²
-    plot_training_and_validation(train_losses, train_r2_scores, test_r2_scores, titre_image="R² overfitt")
+    plot_training_and_validation(train_losses, train_r2_scores, test_r2_scores, titre_image="R²")
     
     
     
