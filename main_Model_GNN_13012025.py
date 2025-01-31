@@ -265,7 +265,7 @@ def plot_training_and_validation(train_losses, train_r2_scores, test_r2_scores,t
     plt.legend()
     plt.tight_layout()
     if titre_image is not None:
-        plt.title(titre_image)
+        plt.save(titre_image)
     plt.show()
 
 # --- Main ---
