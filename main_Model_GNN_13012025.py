@@ -63,7 +63,7 @@ class PressureGraph():
         G = nx.Graph()
         # nodes_x = np.random.uniform(x_min, x_max, num_points)
         # nodes_y = np.random.uniform(y_min, y_max, num_points)
-        
+        # qidngiqdng
         nodes_x = np.random.uniform(x_min, x_max, num_points)
         nodes_y = np.random.uniform(y_min, y_max, num_points)
         
@@ -170,9 +170,10 @@ class PressureGNN(nn.Module):
 
 
 
-def train_gnn_with_validation(model, train_loader, test_loader, test_params, optimizer, loss_fn, epochs, scheduler, best_loss, early_stop_patience, no_improve_count):
+def train_gnn_with_validation(model, train_loader, train_params, test_loader, test_params, optimizer, loss_fn, epochs, scheduler, best_loss, early_stop_patience, no_improve_count):
     model.train()
     train_losses = []
+    train_r2_scores = []
     test_r2_scores = []
 
     for epoch in tqdm(range(epochs), desc="Entraînement"):
@@ -186,6 +187,8 @@ def train_gnn_with_validation(model, train_loader, test_loader, test_params, opt
             optimizer.step()
             epoch_loss += loss.item()
         train_losses.append(epoch_loss / len(train_loader))
+        _, train_r2 = evaluate_gnn(model, train_loader, train_params)
+        train_r2_scores.append(train_r2)
 
         # Validation sur les données de test
         _, test_r2 = evaluate_gnn(model, test_loader, test_params)
@@ -211,7 +214,7 @@ def train_gnn_with_validation(model, train_loader, test_loader, test_params, opt
 
     writer.close()
 
-    return train_losses, test_r2_scores
+    return train_losses, train_r2_scores, test_r2_scores
 
 
 
@@ -231,28 +234,38 @@ def evaluate_gnn(model, loader, params_list):
     return mse, r2
 
 # --- Tracer les courbes ---
-def plot_training_and_validation(train_losses, test_r2_scores):
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+def plot_training_and_validation(train_losses, train_r2_scores, test_r2_scores,titre_image=None):
+    #fig, ax1 = plt.subplots(figsize=(10, 6))
 
-    # Courbe de perte d'entraînement
-    color = 'tab:blue'
-    ax1.set_xlabel("Époque")
-    ax1.set_ylabel("Perte (MSE)", color=color)
-    ax1.plot(train_losses, label="Perte d'entraînement", color=color)
-    ax1.tick_params(axis='y', labelcolor=color)
-    ax1.legend(loc="upper left")
+    # # Courbe de perte d'entraînement
+    # color = 'tab:blue'
+    # ax1.set_xlabel("Époque")
+    # ax1.set_ylabel("Perte (MSE)", color=color)
+    # ax1.plot(train_losses, label="Perte d'entraînement", color=color)
+    # ax1.tick_params(axis='y', labelcolor=color)
+    # ax1.legend(loc="upper left")
 
-    # Courbe de R² sur les données de test
-    ax2 = ax1.twinx()
-    color = 'tab:orange'
-    ax2.set_ylabel("R² (Données de test)", color=color)
-    ax2.plot(test_r2_scores, label="R² (Test)", color=color)
-    ax2.tick_params(axis='y', labelcolor=color)
-    ax2.legend(loc="upper right")
+    # # Courbe de R² sur les données de test
+    # ax2 = ax1.twinx()
+    # color = 'tab:orange'
+    # ax2.set_ylabel("R² (Données de test)", color=color)
+    # ax2.plot(test_r2_scores, label="R² (Test)", color=color)
+    # ax2.tick_params(axis='y', labelcolor=color)
+    # ax2.legend(loc="upper right")
 
-    fig.tight_layout()
-    plt.title("Perte d'entraînement et R² (Test)")
-    plt.grid(True)
+    # fig.tight_layout()
+    # plt.title("Perte d'entraînement et R² (Test)")
+    # plt.grid(True)
+    # plt.show()
+    plt.plot(train_r2_scores, label="R² (train)")
+    plt.plot(test_r2_scores, label="R² (Test)")
+    plt.ylabel("R²", size=15)
+    plt.xlabel("Epoch", size=15)
+    plt.grid()
+    plt.legend()
+    plt.tight_layout()
+    if titre_image is not None:
+        plt.title(titre_image)
     plt.show()
 
 # --- Main ---
@@ -264,7 +277,7 @@ if __name__ == "__main__":
     num_test_graphs = 20
     num_points_train = 1000
     num_points_test = 1000
-    epochs = 400
+    epochs = 50#400
 
     pressure_graph = PressureGraph(P0=200, 
                                    x_c=5, 
@@ -292,9 +305,12 @@ if __name__ == "__main__":
     model.add_layer(GCNConv, 16, 32, activation=F.relu, batch_norm=True, dropout=0.3)
     model.add_layer(GCNConv, 32, 64, activation=F.relu, batch_norm=True, dropout=0.4)
     model.add_layer(GCNConv, 64, 128, activation=F.relu, batch_norm=True, dropout=0.4)
+    model.add_layer(GCNConv, 128, 256, activation=F.relu, batch_norm=True, dropout=0.4)
+    
+    model.add_layer(GCNConv, 256, 128, activation=F.relu, batch_norm=True, dropout=0.4)
     model.add_layer(GCNConv, 128, 64, activation=F.relu, batch_norm=True, dropout=0.3)
     model.add_layer(GCNConv, 64, 32, activation=F.relu, batch_norm=True, dropout=0.2)
-    model.add_layer(GCNConv, 32, 16, activation=F.relu, batch_norm=True)
+    model.add_layer(GCNConv, 32, 16, activation=F.relu, batch_norm=False)
     #model.add_layer(GCNConv, 16, 1, activation=torch.sigmoid)
     
     #ajouter dense layers ?
@@ -314,9 +330,10 @@ if __name__ == "__main__":
     early_stop_patience = 10
     no_improve_count = 0
 
-    train_losses, test_r2_scores = train_gnn_with_validation(
+    train_losses, train_r2_scores, test_r2_scores = train_gnn_with_validation(
         model=model, 
         train_loader=train_loader, 
+        train_params=train_params,
         test_loader=test_loader, 
         test_params=test_params, 
         optimizer=optimizer, 
@@ -335,7 +352,7 @@ if __name__ == "__main__":
     print(f"Test MSE: {test_mse:.4f}, Test R²: {test_r2:.4f}")
 
     # Tracer les courbes de perte et de R²
-    plot_training_and_validation(train_losses, test_r2_scores)
+    plot_training_and_validation(train_losses, train_r2_scores, test_r2_scores, titre_image="R² overfitt")
     
     
     
