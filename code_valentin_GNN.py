@@ -66,7 +66,7 @@ class PressureGNN(nn.Module):
         return x
 
 # Initialisation du modèle et des outils d'entraînement
-model = PressureGNN(in_channels=2, hidden_channels=16, out_channels=1)  # créer une instance de la classe PressureGNN
+model = PressureGNN(in_channels=2, hidden_channels=32, out_channels=1)  # créer une instance de la classe PressureGNN
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01) #L'optimiseur Adam ajuste dynamiquement 
 #le taux d'apprentissage pour chaque paramètre
 #en fonction des moyennes mobiles des gradients et de leurs carrés.
@@ -74,7 +74,7 @@ loss_fn = nn.MSELoss()
 
 # Entraînement du modèle
 losses = []
-epochs = 500
+epochs = 20000
 
 
 for epoch in tqdm(range(epochs), desc="Entraînement du modèle"):
